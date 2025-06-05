@@ -41,7 +41,7 @@ const ExpenseChart: React.FC<ExpenseChartProps> = ({ expenses }) => {
 
   return (
     <div className="flex flex-col items-center print:items-start">
-      <svg viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`} width="100%" height="auto" className="max-w-xs mx-auto print:max-w-[150px]">
+      <svg viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`} width="100%" height={viewBoxSize} className="max-w-xs mx-auto print:max-w-[150px]">
         {dataForChart.map((entry, index) => {
           const percentage = (entry.value / totalExpensesValue);
           const angle = percentage * 360;
