@@ -1,8 +1,6 @@
 import React from 'react';
-
-// These are globals from CDN script tags in index.html
-declare const html2canvas: any; 
-declare const jsPDF: any;
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface PdfExportButtonProps {
   targetId: string;
