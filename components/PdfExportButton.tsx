@@ -70,7 +70,7 @@ const PdfExportButton: React.FC<PdfExportButtonProps> = ({ targetId, month, year
 
       const imgData = canvas.toDataURL('image/png');
       // @ts-ignore
-      const pdf = new jsPDF.jsPDF({ // Correct instantiation if using jspdf.umd.min.js global
+      const pdf = new jsPDF({ // Correct instantiation if using jspdf.umd.min.js global
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
