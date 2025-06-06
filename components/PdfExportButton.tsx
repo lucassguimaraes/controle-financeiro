@@ -18,28 +18,98 @@ const PdfExportButton: React.FC<PdfExportButtonProps> = ({ targetId, month, year
     const input = document.getElementById(targetId);
     if (input && window.html2canvas && window.jspdf) {
       const { jsPDF } = window.jspdf;
-      window.html2canvas(input, { scale: 2, useCORS: true }).then((canvas: HTMLCanvasElement) => {
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const canvasWidth = canvas.width;
-        const canvasHeight = canvas.height;
-        const ratio = canvasWidth / canvasHeight;
-        const width = pdfWidth;
-        const height = width / ratio;
+      
+      // html2canvas options
+      const options = {
+        scale: 2, // Maintain current scale for better quality
+        useCORS: true,
+        logging: false, // Disable logging for production, enable for debugging
+        // Ensure canvas captures full height of the element, not just visible part
+        height: input.scrollHeight,
+        width: input.scrollWidth,
+        windowHeight: input.scrollHeight,
+        windowWidth: input.scrollWidth,
+      };
+
+      window.html2canvas(input, options).then((canvas: HTMLCanvasElement) => {
+        const mainCanvasWidthPx = canvas.width;
+        const mainCanvasHeightPx = canvas.height;
+
+        const pdf = new jsPDF({
+          orientation: 'p', // portrait
+          unit: 'mm',
+          format: 'a4'
+        });
+
+        const pdfPageWidthMM = pdf.internal.pageSize.getWidth();
+        const pdfPageHeightMM = pdf.internal.pageSize.getHeight();
+
+        // Calculate the height of a slice from the main canvas that, when scaled to pdfPageWidthMM,
+        // would have a height of pdfPageHeightMM on the PDF.
+        // This determines how much vertical content from the source canvas fits on one PDF page.
+        const singlePageCanvasSliceHeightPx = Math.floor((pdfPageHeightMM / pdfPageWidthMM) * mainCanvasWidthPx);
         
-        if (height <= pdfHeight) {
-            pdf.addImage(imgData, 'PNG', 0, 0, width, height);
-        } else {
-            // Handle content larger than one page if necessary (simplified here)
-            console.warn("Conteúdo excede o tamanho de uma página A4. Considerar dividir ou escalar.")
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight * (canvasHeight/canvasWidth * (pdfWidth/pdfHeight)) ); //簡易的縮放以符合頁面
+        let numPages = Math.ceil(mainCanvasHeightPx / singlePageCanvasSliceHeightPx);
+        if (numPages === 0 && mainCanvasHeightPx > 0) numPages = 1; // Ensure at least one page if there's content
+        else if (mainCanvasHeightPx === 0) numPages = 0; // No pages for no content
+
+        if (numPages === 0) {
+            alert("Nada para exportar.");
+            return;
+        }
+
+        let currentYoffsetPx = 0;
+
+        for (let i = 0; i < numPages; i++) {
+          if (i > 0) {
+            pdf.addPage();
+          }
+
+          const sliceHeightPx = Math.min(singlePageCanvasSliceHeightPx, mainCanvasHeightPx - currentYoffsetPx);
+          
+          if (sliceHeightPx <= 0) continue;
+
+          // Create a temporary canvas for the current page's slice
+          const sliceCanvas = document.createElement('canvas');
+          sliceCanvas.width = mainCanvasWidthPx;
+          sliceCanvas.height = sliceHeightPx;
+          const sliceCtx = sliceCanvas.getContext('2d');
+
+          if (sliceCtx) {
+            // Draw the appropriate slice from the main (large) canvas to the temporary slice canvas
+            sliceCtx.drawImage(
+              canvas,               // Source canvas
+              0,                    // Source X
+              currentYoffsetPx,     // Source Y (where to start slicing from the main canvas)
+              mainCanvasWidthPx,    // Source Width
+              sliceHeightPx,        // Source Height (height of the slice)
+              0,                    // Destination X on sliceCanvas
+              0,                    // Destination Y on sliceCanvas
+              mainCanvasWidthPx,    // Destination Width on sliceCanvas
+              sliceHeightPx         // Destination Height on sliceCanvas
+            );
+
+            const imgData = sliceCanvas.toDataURL('image/png', 1.0); // PNG quality
+
+            // Add the image slice to the PDF page.
+            // Set height to 0 to let jspdf calculate it based on width and aspect ratio.
+            // The image will be scaled to fit pdfPageWidthMM.
+            // Its height will be <= pdfPageHeightMM due to singlePageCanvasSliceHeightPx calculation.
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfPageWidthMM, 0, undefined, 'FAST');
+          }
+          currentYoffsetPx += sliceHeightPx;
         }
         pdf.save(`controle-financeiro-${month.toLowerCase()}-${year}.pdf`);
+      }).catch((error: any) => {
+          console.error("Erro durante a captura html2canvas:", error);
+          alert('Erro ao gerar PDF: Falha na captura do conteúdo. Verifique o console para detalhes.');
       });
     } else {
-      alert('Erro ao gerar PDF. Bibliotecas não carregadas ou elemento não encontrado.');
+      let errorMsg = 'Erro ao gerar PDF.';
+      if (!input) errorMsg += ' Elemento alvo não encontrado.';
+      if (!window.html2canvas) errorMsg += ' Biblioteca html2canvas não carregada.';
+      if (!window.jspdf) errorMsg += ' Biblioteca jspdf não carregada.';
+      alert(errorMsg);
     }
   };
 
@@ -47,6 +117,7 @@ const PdfExportButton: React.FC<PdfExportButtonProps> = ({ targetId, month, year
     <button
       onClick={handleExport}
       className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-md shadow-md transition-colors print:hidden"
+      aria-label={`Salvar relatório de ${month} ${year} como PDF`}
     >
       Salvar em PDF (A4)
     </button>
