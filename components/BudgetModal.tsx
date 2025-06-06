@@ -9,76 +9,50 @@ interface BudgetModalProps {
 }
 
 const BudgetModal: React.FC<BudgetModalProps> = ({ isOpen, onClose, categories, currentBudgets, onSave }) => {
-  const [budgets, setBudgets] = useState<{ [category: string]: string }>({});
+  const [budgets, setBudgets] = useState<{ [category: string]: number }>({});
 
   useEffect(() => {
     if (isOpen) {
-      const initialBudgets = categories.reduce((acc, cat) => {
-        acc[cat] = currentBudgets[cat]?.toString() || '';
-        return acc;
-      }, {} as { [category: string]: string });
-      setBudgets(initialBudgets);
+      setBudgets(currentBudgets);
     }
-  }, [isOpen, categories, currentBudgets]);
-
-  const handleChange = (category: string, value: string) => {
-    // Allow only numbers or empty string
-    if (/^\d*\.?\d*$/.test(value) || value === '') {
-      setBudgets(prev => ({ ...prev, [category]: value }));
-    }
-  };
-
-  const handleSave = () => {
-    const numericBudgets = Object.entries(budgets).reduce((acc, [cat, valStr]) => {
-      const valNum = parseFloat(valStr.replace(',', '.'));
-      if (!isNaN(valNum) && valNum > 0) {
-        acc[cat] = valNum;
-      }
-      return acc;
-    }, {} as { [category: string]: number });
-    onSave(numericBudgets);
-  };
+  }, [isOpen, currentBudgets]);
 
   if (!isOpen) return null;
 
+  const handleChange = (category: string, value: string) => {
+    setBudgets(prev => ({ ...prev, [category]: parseFloat(value) || 0 }));
+  };
+
+  const handleSave = () => {
+    onSave(budgets);
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 print:hidden" role="dialog" aria-modal="true" aria-labelledby="budget-modal-title">
-      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
-        <h2 id="budget-modal-title" className="text-xl font-semibold mb-4 text-gray-800">Gerenciar Orçamentos de Despesas</h2>
-        
-        <div className="overflow-y-auto flex-grow pr-2">
-          {categories.length === 0 && <p className="text-gray-600">Nenhuma categoria de despesa definida.</p>}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 print:hidden">
+      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
+        <h2 className="text-2xl font-semibold mb-6">Gerenciar Orçamentos de Despesas</h2>
+        <div className="space-y-4 max-h-96 overflow-y-auto">
           {categories.map(category => (
-            <div key={category} className="flex items-center justify-between mb-3">
-              <label htmlFor={`budget-${category}`} className="text-gray-700 flex-1 mr-2">{category}:</label>
+            <div key={category} className="flex items-center justify-between">
+              <label htmlFor={`budget-${category}`} className="text-gray-700">{category}:</label>
               <div className="flex items-center">
-                <span className="mr-1 text-gray-500">R$</span>
+                <span className="mr-1 text-gray-600">R$</span>
                 <input
-                  type="text"
+                  type="number"
                   id={`budget-${category}`}
                   value={budgets[category] || ''}
-                  onChange={(e) => handleChange(category, e.target.value)}
-                  placeholder="0,00"
-                  className="w-32 p-2 border border-gray-300 rounded-md text-right focus:ring-primary focus:border-primary"
+                  placeholder="0.00"
+                  onChange={e => handleChange(category, e.target.value)}
+                  className="w-32 p-2 border border-gray-300 rounded-md text-right"
                 />
               </div>
             </div>
           ))}
+          {categories.length === 0 && <p className="text-gray-500">Nenhuma categoria de despesa definida.</p>}
         </div>
-
-        <div className="flex justify-end space-x-3 mt-6 pt-4 border-t">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={handleSave}
-            className="px-4 py-2 bg-primary text-white rounded-md hover:bg-blue-600 transition-colors"
-          >
-            Salvar Orçamentos
-          </button>
+        <div className="mt-8 flex justify-end space-x-3">
+          <button onClick={onClose} className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md">Cancelar</button>
+          <button onClick={handleSave} className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-md">Salvar Orçamentos</button>
         </div>
       </div>
     </div>
