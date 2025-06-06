@@ -5,18 +5,6 @@ export const MONTHS: string[] = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
 ];
 
-export enum AppRoute {
-  HOME = '/',
-  ABOUT = '/about',
-  PRIVACY = '/privacy',
-}
-
-export const APP_ROUTES = {
-  HOME: AppRoute.HOME,
-  ABOUT: AppRoute.ABOUT,
-  PRIVACY: AppRoute.PRIVACY,
-};
-
 export const LOCAL_STORAGE_KEY = 'familyFinanceApp';
 
 export const INITIAL_CATEGORIES_INCOME: string[] = ['Salário', 'Bônus', 'Freelance', 'Investimentos', 'Outras Rendas'];

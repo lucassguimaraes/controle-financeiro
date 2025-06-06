@@ -2,9 +2,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { FinancialItem, ItemType, UserSettings, MonthlyRecord, AppData } from './types';
 import { MONTHS, INITIAL_INCOMES, INITIAL_EXPENSES, generateId, LOCAL_STORAGE_KEY, INITIAL_CATEGORIES_INCOME, INITIAL_CATEGORIES_EXPENSE } from './constants';
-import Navbar from './components/Navbar';
-import AboutPage from './pages/AboutPage';
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import Header from './components/Header';
 import MonthYearSelector from './components/MonthYearSelector';
 import FinancialSection from './components/FinancialSection';
